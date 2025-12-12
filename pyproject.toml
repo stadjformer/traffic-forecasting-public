@@ -56,6 +56,11 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools.packages.find]
 exclude = ["data*", "notebooks*", "tests*"]
 
+[tool.pytest.ini_options]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
+
 [tool.uv.sources]
 dcrnn-pytorch = { git = "https://github.com/witgaw/DCRNN_PyTorch.git", rev = "4aa3e31" }
 mtgnn = {  git = "https://github.com/witgaw/MTGNN", rev = "fede5fa" }
