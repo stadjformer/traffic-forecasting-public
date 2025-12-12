@@ -1,0 +1,75 @@
+# STGFormer Chebyshev+TCN+Xavier+DOW with Stage1-Only Normalized Pretraining + Imputation
+#
+# Loads the pretrained checkpoint produced by
+# configs/stgformer_pretrain_stage1only_normalized.yaml and applies
+# imputation on normalized data before fine-tuning the Cheb+TCN+DOW model.
+#
+# Usage:
+#   python scripts/train_stgformer.py --config configs/stgformer_cheb_tcn_xavier_dow_stage1only_norm_impute.yaml
+
+description: "Cheb+TCN+Xavier+DOW with stage1-only normalized pretraining + imputation"
+
+datasets:
+  - PEMS-BAY
+  - METR-LA
+
+model:
+  num_layers: 3
+  num_heads: 4
+  input_embedding_dim: 24
+  tod_embedding_dim: 24
+  dow_embedding_dim: 24
+  adaptive_embedding_dim: 80
+  dropout: 0.1
+  dropout_a: 0.3
+  mlp_ratio: 4
+  use_mixed_proj: true
+
+propagation:
+  mode: chebyshev
+
+temporal:
+  mode: tcn
+  num_layers: 3
+  kernel_size: 3
+  dilation_base: 2
+  dropout: 0.1
+
+graph:
+  mode: learned
+  lambda_hybrid: 0.5
+  sparsity_k: null
+
+pretraining:
+  stage1_epochs: 10
+  stage1_mask_ratio: 0.15
+  stage2_epochs: 0
+  stage2_mask_ratio: 0.10
+  learning_rate: 0.001
+  pretrain_batch_size: 100
+  imputation_iterations: 3
+  use_normalized_data: true
+  save_to: "STGFORMER_CHEB_TCN_XAVIER_DOW_STAGE1_NORM_PRETRAIN"
+
+use_imputation: true
+
+training:
+  epochs: 10
+  batch_size: 200
+  learning_rate: 0.001
+  weight_decay: 0.0003
+  early_stop: 5
+  clip_grad: 0.0
+  seed: 42
+
+initialization:
+  use_zero_init: false
+
+output:
+  hf_repo_prefix: STGFORMER_CHEB_TCN_XAVIER_DOW_STAGE1_NORM_IMPUTE
+
+wandb:
+  entity: cs224w-traffic-forecasting
+  enabled: true
+
+exclude_missing_from_norm: true

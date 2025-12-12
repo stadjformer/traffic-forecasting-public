@@ -1,0 +1,72 @@
+# STGFormer with Stage 1 Only Pretraining + Imputation on Normalized Data
+#
+# Loads the pretrained checkpoint produced by
+# configs/stgformer_pretrain_stage1only_normalized.yaml, then imputes the
+# normalized data before fine-tuning on the forecasting task.
+#
+# Usage:
+#   python scripts/train_stgformer.py --config configs/stgformer_pretrain_stage1only_normalized_impute.yaml
+
+description: "STGFormer with stage1-only pretraining + imputation on NORMALIZED data"
+
+datasets:
+  - METR-LA
+  - PEMS-BAY
+
+# Model architecture (same as baseline)
+model:
+  num_layers: 3
+  num_heads: 4
+  input_embedding_dim: 24
+  tod_embedding_dim: 24
+  adaptive_embedding_dim: 80
+  dropout: 0.1
+  dropout_a: 0.3
+  mlp_ratio: 4
+  use_mixed_proj: true
+
+# Graph structure
+graph:
+  mode: learned
+  lambda_hybrid: 0.5
+  sparsity_k: null
+
+# Pretraining configuration - load existing checkpoint
+pretraining:
+  stage1_epochs: 10
+  stage1_mask_ratio: 0.15
+  stage2_epochs: 0
+  stage2_mask_ratio: 0.10
+  learning_rate: 0.001
+  pretrain_batch_size: 100
+  imputation_iterations: 3
+
+  # Work entirely in normalized space (match the saved checkpoint)
+  use_normalized_data: true
+
+  # Load pretrained model (skips pretraining)
+  load_from: "STGFORMER_PRETRAINED_STAGE1ONLY_NORM"
+
+# Enable imputation after loading pretrained model
+use_imputation: true
+
+# Training (forecasting, after loading + imputation)
+training:
+  epochs: 20
+  batch_size: 200
+  learning_rate: 0.0003
+  weight_decay: 0.0003
+  early_stop: 10
+  clip_grad: 0.0
+  milestones: [10, 15]
+  lr_decay_rate: 0.1
+  seed: 42
+
+# Output
+output:
+  hf_repo_prefix: STGFORMER_PRETRAIN_STAGE1ONLY_NORM_IMPUTE
+
+# Weights & Biases logging
+wandb:
+  entity: cs224w-traffic-forecasting
+  enabled: true

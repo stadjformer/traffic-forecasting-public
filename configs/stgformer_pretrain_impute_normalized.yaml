@@ -1,0 +1,95 @@
+# STGFormer with Masked Node Pretraining + Imputation on Normalized Data
+#
+# This experiment uses NORMALIZED data for both pretraining and imputation,
+# in contrast to the default approach which uses unnormalized (raw) data.
+#
+# Key differences from stgformer_pretrain_impute.yaml:
+#   - use_normalized_data: true (pretrain and impute in normalized space)
+#   - Different HF repo prefix to track this variant separately
+#
+# Hypothesis: Normalized pretraining may improve training stability and
+# representation learning, though imputation is typically done on raw data
+# to preserve actual data scale.
+#
+# Usage:
+#   python scripts/train_stgformer.py --config configs/stgformer_pretrain_impute_normalized.yaml
+#   python scripts/train_stgformer.py --config configs/stgformer_pretrain_impute_normalized.yaml --dataset METR-LA
+
+description: "STGFormer with masked node pretraining + imputation on NORMALIZED data (per-timestep -> per-node curriculum)"
+
+datasets:
+  # - METR-LA
+  - PEMS-BAY
+
+# Model architecture (same as baseline)
+model:
+  num_layers: 3
+  num_heads: 4
+  input_embedding_dim: 24
+  tod_embedding_dim: 24
+  adaptive_embedding_dim: 80
+  dropout: 0.1
+  dropout_a: 0.3
+  mlp_ratio: 4
+  use_mixed_proj: true
+
+# Graph structure
+graph:
+  mode: learned
+  lambda_hybrid: 0.5
+  sparsity_k: null
+
+# Pretraining configuration
+pretraining:
+  # Stage 1: Per-timestep masking (easier task)
+  stage1_epochs: 5
+  stage1_mask_ratio: 0.15
+
+  # Stage 2: Per-node masking (harder task)
+  stage2_epochs: 5
+  stage2_mask_ratio: 0.10
+
+  # Learning rate for pretraining
+  learning_rate: 0.001
+
+  # Batch size for pretraining
+  pretrain_batch_size: 100
+
+  # Number of iterative refinement passes for imputation
+  imputation_iterations: 3
+
+  # KEY DIFFERENCE: Use normalized data for pretraining and imputation
+  # This means the model learns to predict masked values in normalized space
+  # (mean=0, std=1) rather than raw traffic speeds (0-70 mph).
+  # Imputed data stays normalized for fine-tuning (no inverse transform needed).
+  use_normalized_data: true
+
+  # Optional: Save pretrained model to HF Hub
+  # save_to: "STGFORMER_PRETRAINED_NORM"
+
+  # Optional: Load existing pretrained model (skips pretraining)
+  load_from: "STGFORMER_PRETRAINED_NORM"
+
+# Enable imputation after pretraining
+use_imputation: true
+
+# Training (forecasting, after pretraining + imputation)
+training:
+  epochs: 20
+  batch_size: 200
+  learning_rate: 0.001
+  weight_decay: 0.0003
+  early_stop: 10
+  clip_grad: 0.0
+  milestones: [10, 15]
+  lr_decay_rate: 0.1
+  seed: 42  # Random seed for reproducibility
+
+# Output - use different prefix to distinguish from unnormalized variant
+output:
+  hf_repo_prefix: STGFORMER_PRETRAIN_IMPUTE_NORM
+
+# Weights & Biases logging
+wandb:
+  entity: cs224w-traffic-forecasting
+  enabled: true

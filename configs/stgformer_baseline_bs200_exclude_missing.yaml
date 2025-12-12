@@ -1,0 +1,59 @@
+# STGFormer Baseline with Batch Size 200 + Exclude Missing from Normalization
+# Same as stgformer_baseline_bs200_short.yaml but excludes missing values (0.0)
+# when computing normalization statistics (mean/std).
+#
+# This ensures proper mean ≈ 0 and std ≈ 1 for normalized data when missing values exist.
+# Baseline keeps missing values included (matching original STGFormer behavior).
+#
+# Usage:
+#   python scripts/train_stgformer.py --config configs/stgformer_baseline_bs200_exclude_missing.yaml
+#
+
+description: "Baseline STGFormer with batch_size=200 and exclude_missing_from_norm"
+
+# Datasets to train on (can be overridden with --dataset CLI arg)
+datasets:
+  - PEMS-BAY
+  - METR-LA
+
+# Model architecture (same as baseline)
+model:
+  num_layers: 3
+  num_heads: 4
+  input_embedding_dim: 24
+  tod_embedding_dim: 24
+  adaptive_embedding_dim: 80
+  dropout: 0.1
+  dropout_a: 0.3
+  mlp_ratio: 4
+  use_mixed_proj: true
+
+# Graph structure (same as baseline)
+graph:
+  mode: learned
+  lambda_hybrid: 0.5
+  sparsity_k: null
+
+# Training (same as baseline)
+training:
+  epochs: 20
+  batch_size: 200
+  learning_rate: 0.001
+  weight_decay: 0.0003
+  early_stop: 5
+  clip_grad: 0.0
+  milestones: [10, 15]
+  lr_decay_rate: 0.1
+  seed: 42
+
+# KEY DIFFERENCE: Exclude missing values when fitting normalization
+exclude_missing_from_norm: true
+
+# Output
+output:
+  hf_repo_prefix: STGFORMER_BS200_EXCLUDE_MISSING
+
+# Weights & Biases logging
+wandb:
+  entity: cs224w-traffic-forecasting
+  enabled: true

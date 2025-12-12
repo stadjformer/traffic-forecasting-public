@@ -1,0 +1,23 @@
+data/
+.venv/
+.jupyter/
+notebooks/.ipynb_checkpoints/
+__pycache__/
+*.pyc
+*.pyo
+.github
+docs/
+traffic_forecasting.egg-info
+models/
+wandb/
+
+# Backup files
+*.bak
+*.bak2
+*.bak3
+*.backup_*.csv
+
+# Results directory (should be versioned separately if needed)
+results/*.backup_*.csv
+outputs/
+.DS_Store

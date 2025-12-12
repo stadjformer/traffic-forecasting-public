@@ -1,0 +1,74 @@
+# STGFormer with Optimized Mamba Temporal Mode
+# Optimized for speed: reduced expand, d_state, d_conv
+# Quick test to validate if Mamba provides accuracy benefits despite slowdown
+#
+# NOTE: Requires CUDA-enabled GPU (mamba-ssm is CUDA-only)
+# Requires: uv sync --extra cuda
+#
+# Optimizations vs. stgformer_mamba.yaml:
+# - expand: 1 (vs 2) → ~2x faster
+# - d_state: 8 (vs 16) → ~1.3x faster
+# - d_conv: 2 (vs 4) → ~1.1x faster
+# - epochs: 2 (quick validation test)
+# Expected: ~3x faster than original Mamba (still ~3x slower than Transformer)
+#
+# Usage:
+#   python scripts/train_stgformer.py --config configs/stgformer_mamba_fast.yaml
+#   python scripts/train_stgformer.py --config configs/stgformer_mamba_fast.yaml --dataset METR-LA
+
+# Experiment description (logged to W&B)
+description: "STGFormer with optimized Mamba SSM (fast config for validation)"
+
+# Datasets to train on (can be overridden with --dataset CLI arg)
+# PEMS-BAY first (larger, needs more memory - fail early if OOM)
+datasets:
+  - PEMS-BAY
+  - METR-LA
+
+# Model architecture (same as baseline)
+model:
+  num_layers: 3
+  num_heads: 4
+  input_embedding_dim: 24
+  tod_embedding_dim: 24
+  adaptive_embedding_dim: 80
+  dropout: 0.1
+  dropout_a: 0.3
+  mlp_ratio: 4
+  use_mixed_proj: true
+
+# Temporal processing (OPTIMIZED Mamba for speed)
+temporal:
+  mode: mamba  # transformer | mamba
+  # Optimized Mamba parameters (prioritize speed over capacity)
+  d_state: 8    # SSM state dimension (reduced from 16)
+  d_conv: 2     # Convolution kernel size (reduced from 4)
+  expand: 1     # Expansion factor (reduced from 2)
+
+# Graph structure (same as baseline)
+graph:
+  mode: learned  # learned | geographic | hybrid
+  lambda_hybrid: 0.5
+  sparsity_k: null
+
+# Training (quick validation run)
+training:
+  epochs: 20
+  batch_size: 100
+  learning_rate: 0.001
+  weight_decay: 0.0003
+  early_stop: 5
+  clip_grad: 0.0
+  milestones: [10, 15]
+  lr_decay_rate: 0.1
+  seed: 42  # Random seed for reproducibility
+
+# Output
+output:
+  # HF repo: {username}/{hf_repo_prefix}_{dataset} (if username is not specified it gets pulled in from .env_public, dataset always gets appended automatically)
+  hf_repo_prefix: STGFORMER_MAMBA_FAST
+
+# Weights & Biases logging
+wandb:
+  enabled: true
+  # project: traffic-forecasting  # Default

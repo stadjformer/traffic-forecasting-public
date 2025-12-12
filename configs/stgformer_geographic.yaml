@@ -1,0 +1,50 @@
+# STGFormer with Geographic Graph
+# Uses only pre-computed geographic adjacency (no learned graph)
+#
+# Usage:
+#   python scripts/train_stgformer.py --config configs/stgformer_geographic.yaml
+
+description: "STGFormer with fixed geographic adjacency (no learned graph)"
+
+# PEMS-BAY first (larger, needs more memory - fail early if OOM)
+datasets:
+  - PEMS-BAY
+  - METR-LA
+
+model:
+  num_layers: 3
+  num_heads: 4
+  input_embedding_dim: 24
+  tod_embedding_dim: 24
+  dow_embedding_dim: 0 
+  adaptive_embedding_dim: 80
+  dropout: 0.1
+  dropout_a: 0.3
+  mlp_ratio: 4
+  use_mixed_proj: true
+
+graph:
+  mode: geographic
+  sparsity_k: null
+
+training:
+  epochs: 20
+  batch_size: 200
+  learning_rate: 0.001
+  weight_decay: 0.0003
+  early_stop: 5
+  clip_grad: 0.0
+  milestones: [10, 15]
+  lr_decay_rate: 0.1
+  seed: 42  # Random seed for reproducibility
+
+# Output
+output:
+  # HF repo: {username}/{hf_repo_prefix}_{dataset} (if username is not specified it gets pulled in from .env_public, dataset always gets appended automatically)
+  hf_repo_prefix: STGFORMER_GEO
+
+# Weights & Biases logging (optional)
+wandb:
+  entity: cs224w-traffic-forecasting
+  enabled: true
+  # project: traffic-forecasting  # Default

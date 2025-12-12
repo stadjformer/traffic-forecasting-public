@@ -1,0 +1,79 @@
+# STGFormer Pretraining for LARGEST-GLA
+#
+# Stage 1: Masked node pretraining to learn good representations.
+# Saves pretrained weights to HuggingFace for use by SFT config.
+#
+# No imputation - just better weight initialization.
+#
+# Usage:
+#   uv run python scripts/train_stgformer.py --config configs/stgformer_pretrain_largest_gla.yaml --dataset LARGEST-GLA --verbose
+
+description: "STGFormer pretraining for LARGEST-GLA (masked node prediction)"
+
+datasets:
+  - LARGEST-GLA
+
+# Model architecture
+model:
+  num_layers: 3
+  num_heads: 4
+  input_embedding_dim: 24
+  tod_embedding_dim: 24
+  adaptive_embedding_dim: 80
+  dropout: 0.1
+  dropout_a: 0.3
+  mlp_ratio: 4
+  use_mixed_proj: true
+
+# Graph structure
+graph:
+  mode: learned
+  lambda_hybrid: 0.5
+  sparsity_k: null
+
+# Pretraining configuration
+pretraining:
+  # Stage 1: Per-timestep masking (easier task)
+  stage1_epochs: 10
+  stage1_mask_ratio: 0.15
+
+  # Stage 2: Per-node masking (harder task)
+  stage2_epochs: 10
+  stage2_mask_ratio: 0.10
+
+  learning_rate: 0.001
+  pretrain_batch_size: 8
+
+  # Use 10% of training data for faster pretraining (more epochs compensate)
+  pretrain_data_fraction: 0.1
+
+  # Pretrain on normalized data for stability
+  use_normalized_data: true
+
+  # Save pretrained weights to HF (used by SFT config)
+  # Final repo: emelle/STGFormer-pretrain-largestgla
+  save_to: "emelle/STGFormer-pretrain"
+
+# No imputation - just pretraining for better init weights
+use_imputation: false
+
+# Training (forecasting after pretraining)
+training:
+  epochs: 20
+  batch_size: 16
+  learning_rate: 0.0003  # Lower LR for fine-tuning (preserve pretrained representations)
+  weight_decay: 0.0003
+  early_stop: 10
+  clip_grad: 5.0
+  milestones: [10, 15]
+  lr_decay_rate: 0.1
+  seed: 42
+
+# Output (dataset suffix added automatically)
+output:
+  hf_repo_prefix: emelle/STGFormer-sft
+
+# Weights & Biases logging
+wandb:
+  entity: cs224w-traffic-forecasting
+  enabled: true

@@ -1,0 +1,72 @@
+============================================================
+STGFormer: Mamba vs Transformer Benchmark
+============================================================
+Device: NVIDIA RTX A6000
+CUDA Version: 12.8
+PyTorch Version: 2.9.0+cu128
+
+Configuration:
+  Batch size: 64
+  Num nodes: 207
+  Sequence length: 12
+  Model dimension: 96
+  Effective batch (B*N): 13248
+
+Model Parameters:
+  Transformer: 36,960
+  Mamba: 68,160
+
+============================================================
+Benchmarking: Transformer
+============================================================
+Warming up (10 iterations)...
+Running benchmark (100 iterations)...
+Average time: 3.70 ms
+
+============================================================
+Benchmarking: Mamba
+============================================================
+Warming up (10 iterations)...
+Running benchmark (100 iterations)...
+Average time: 35.44 ms
+
+============================================================
+Memory Usage: Transformer
+============================================================
+Allocated memory: 447.06 MB
+Peak memory: 651.71 MB
+
+============================================================
+Memory Usage: Mamba
+============================================================
+Allocated memory: 886.47 MB
+Peak memory: 1177.56 MB
+
+============================================================
+Component Profiling: Transformer
+============================================================
+  1. Permute [B,T,N,D] -> [B,N,T,D]: 0.16 ms
+  2. Reshape [B,N,T,D] -> [B*N,T,D]: 18.13 ms
+  3. Transformer forward pass: 356.78 ms
+  4. Reshape [B*N,T,D] -> [B,N,T,D]: 0.29 ms
+  5. Permute [B,N,T,D] -> [B,T,N,D]: 0.16 ms
+
+============================================================
+Component Profiling: Mamba
+============================================================
+  1. Permute [B,T,N,D] -> [B,N,T,D]: 0.14 ms
+  2. Reshape [B,N,T,D] -> [B*N,T,D]: 18.20 ms
+  3. Mamba forward pass: 3543.61 ms
+  4. Reshape [B*N,T,D] -> [B,N,T,D]: 0.29 ms
+  5. Permute [B,N,T,D] -> [B,T,N,D]: 0.17 ms
+
+============================================================
+SUMMARY
+============================================================
+Model           Time (ms)    Memory (MB)     Peak (MB)   
+------------------------------------------------------------
+Transformer     3.70         447.06          651.71      
+Mamba           35.44        886.47          1177.56     
+------------------------------------------------------------
+Mamba is 9.58x SLOWER than Transformer
+Mamba uses 1.81x MORE memory than Transformer

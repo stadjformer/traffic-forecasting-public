@@ -1,0 +1,60 @@
+# STGFormer SFT (Supervised Fine-Tuning) for LARGEST-GLA
+#
+# Stage 2: Load pretrained weights from HF and fine-tune on forecasting task.
+# Uses lower learning rate to preserve learned representations.
+#
+# Requires: First run stgformer_pretrain_largest_gla.yaml to create pretrained weights.
+#
+# Usage:
+#   uv run python scripts/train_stgformer.py --config configs/stgformer_sft_largest_gla.yaml --dataset LARGEST-GLA --verbose
+
+description: "STGFormer SFT for LARGEST-GLA (fine-tuning from pretrained weights)"
+
+datasets:
+  - LARGEST-GLA
+
+# Model architecture (must match pretrain config)
+model:
+  num_layers: 3
+  num_heads: 4
+  input_embedding_dim: 24
+  tod_embedding_dim: 24  # Must match pretrain config
+  adaptive_embedding_dim: 80
+  dropout: 0.1
+  dropout_a: 0.3
+  mlp_ratio: 4
+  use_mixed_proj: true
+
+# Graph structure
+graph:
+  mode: learned
+  lambda_hybrid: 0.5
+  sparsity_k: null
+
+# Load pretrained weights (skips pretraining)
+pretraining:
+  load_from: "emelle/STGFormer-pretrain"
+
+# No imputation - use real data with NaN masking in loss
+use_imputation: false
+
+# Training (forecasting with pretrained init)
+training:
+  epochs: 20
+  batch_size: 16
+  learning_rate: 0.0003  # Lower LR for fine-tuning (preserve pretrained representations)
+  weight_decay: 0.0003
+  early_stop: 10
+  clip_grad: 5.0
+  milestones: [10, 15]
+  lr_decay_rate: 0.1
+  seed: 42
+
+# Output (dataset suffix added automatically)
+output:
+  hf_repo_prefix: emelle/STGFormer-sft
+
+# Weights & Biases logging
+wandb:
+  entity: cs224w-traffic-forecasting
+  enabled: true

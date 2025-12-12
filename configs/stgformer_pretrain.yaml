@@ -1,0 +1,98 @@
+# STGFormer with Masked Node Pretraining Configuration
+#
+# This config enables self-supervised pretraining before forecasting training.
+# Pretraining learns spatial correlations via masked node prediction.
+#
+# Usage:
+#   python scripts/train_stgformer.py --config configs/stgformer_pretrain.yaml
+#   python scripts/train_stgformer.py --config configs/stgformer_pretrain.yaml --dataset METR-LA
+
+description: "STGFormer with masked node pretraining (curriculum: per-timestep -> per-node)"
+
+datasets:
+  - PEMS-BAY
+  - METR-LA
+
+# Model architecture (same as baseline)
+model:
+  num_layers: 3
+  num_heads: 4
+  input_embedding_dim: 24
+  tod_embedding_dim: 24
+  adaptive_embedding_dim: 80
+  dropout: 0.1
+  dropout_a: 0.3
+  mlp_ratio: 4
+  use_mixed_proj: true
+
+# Graph structure
+graph:
+  mode: learned
+  lambda_hybrid: 0.5
+  sparsity_k: null
+
+# Pretraining configuration
+# Three modes:
+#   1. No pretraining: omit this section entirely (backwards compatible)
+#   2. Pretrain fresh: set stage epochs, optionally save_to
+#   3. Load pretrained: set load_from (ignores stage epochs)
+pretraining:
+  # Stage 1: Per-timestep masking (easier task)
+  # Model can use temporal context from same node + spatial from neighbors
+  stage1_epochs: 5
+  stage1_mask_ratio: 0.15
+
+  # Stage 2: Per-node masking (harder task)
+  # Masks entire nodes across all timesteps - forces pure spatial reasoning
+  stage2_epochs: 5
+  stage2_mask_ratio: 0.10
+
+  # Learning rate for pretraining (can differ from main training)
+  learning_rate: 0.001
+
+  # Batch size for pretraining (can differ from main training)
+  pretrain_batch_size: 100
+
+  # Number of iterative refinement passes for imputation (default: 3)
+  imputation_iterations: 3
+
+  # Data normalization for pretraining/imputation (default: false)
+  # - false (default): Pretrain and impute on unnormalized (raw) data
+  # - true: Pretrain and impute on normalized data (same scale as downstream training)
+  # Note: In general, imputation is usually done on unnormalized data to preserve
+  # the actual data scale, but normalized pretraining can improve training stability.
+  use_normalized_data: false
+
+  # Optional: Save pretrained model to HF Hub
+  # Two formats supported:
+  #   - Full repo ID: "username/stgformer-pretrained" (if contains "/")
+  #   - Model prefix: "STGFORMER_PRETRAINED" (uses HF_USERNAME_UPLOAD from .env)
+  save_to: "STGFORMER_PRETRAINED"
+
+  # Optional: Load existing pretrained model (skips pretraining)
+  # load_from: "STGFORMER_PRETRAINED"
+
+# Imputation configuration
+# Requires pretraining section to be present (provides imputation head)
+# use_imputation: false  # If true, impute train data + inference inputs
+
+# Training (forecasting, after pretraining)
+training:
+  epochs: 20
+  batch_size: 200
+  learning_rate: 0.001
+  weight_decay: 0.0003
+  early_stop: 5
+  clip_grad: 0.0
+  milestones: [10, 15]
+  lr_decay_rate: 0.1
+  seed: 42  # Random seed for reproducibility
+
+# Output
+output:
+  hf_repo_prefix: STGFORMER_PRETRAIN
+
+# Weights & Biases logging
+wandb:
+  entity: cs224w-traffic-forecasting
+  enabled: true

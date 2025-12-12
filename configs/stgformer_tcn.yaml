@@ -1,0 +1,71 @@
+# STGFormer with TCN Temporal Mode
+# Uses Temporal Convolutional Network instead of Transformer for temporal processing
+#
+# TCN provides:
+# - Causal convolutions (no future leakage)
+# - Exponentially growing receptive field via dilations
+# - O(T) complexity with parallel computation
+# - Better inductive bias for local temporal patterns
+#
+# Usage:
+#   invoke train-experiment --name tcn
+#   invoke train-experiment --name tcn --dataset METR-LA
+
+# Experiment description (logged to W&B)
+description: "STGFormer with TCN temporal processing (causal dilated convolutions)"
+
+# Datasets to train on
+# PEMS-BAY first (larger, needs more memory - fail early if OOM)
+datasets:
+  - PEMS-BAY
+  - METR-LA
+
+# Model architecture (same as baseline)
+model:
+  num_layers: 3
+  num_heads: 4
+  input_embedding_dim: 24
+  tod_embedding_dim: 24
+  adaptive_embedding_dim: 80
+  dropout: 0.1
+  dropout_a: 0.3
+  mlp_ratio: 4
+  use_mixed_proj: true
+
+# Temporal processing (ONLY DIFFERENCE: TCN instead of transformer)
+temporal:
+  mode: tcn  # transformer | mamba | tcn
+  # TCN-specific parameters
+  num_layers: 3      # Number of TCN layers (each doubles receptive field)
+  kernel_size: 3     # Convolution kernel size (local window)
+  dilation_base: 2   # Dilation growth (1, 2, 4, 8, ...)
+  dropout: 0.1       # Dropout rate
+
+# Graph structure (same as baseline)
+graph:
+  mode: learned  # learned | geographic | hybrid
+  lambda_hybrid: 0.5
+  sparsity_k: null
+
+# Training (same as baseline)
+training:
+  epochs: 20
+  batch_size: 200
+  learning_rate: 0.001
+  weight_decay: 0.0003
+  early_stop: 5
+  clip_grad: 0.0
+  milestones: [10, 15]
+  lr_decay_rate: 0.1
+  seed: 42  # Random seed for reproducibility
+
+# Output
+
+output:
+  # HF repo: {username}/{hf_repo_prefix}_{dataset} (if username is not specified it gets pulled in from .env_public, dataset always gets appended automatically)
+  hf_repo_prefix: STGFORMER_TCN
+
+# Weights & Biases logging
+wandb:
+  enabled: true
+  # project: traffic-forecasting  # Default

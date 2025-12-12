@@ -1,0 +1,57 @@
+# STGFormer with Chebyshev Propagation + TCN Temporal Mode + DOW Embeddings
+# Adds day-of-week embeddings on top of the Chebyshev+TCN baseline.
+#
+# Usage:
+#   python scripts/train_stgformer.py --config configs/stgformer_cheb_tcn_dow.yaml
+#
+
+description: "STGFormer Chebyshev+TCN with day-of-week embeddings"
+
+datasets:
+  - PEMS-BAY
+  - METR-LA
+
+model:
+  num_layers: 3
+  num_heads: 4
+  input_embedding_dim: 24
+  tod_embedding_dim: 24
+  dow_embedding_dim: 24
+  adaptive_embedding_dim: 80
+  dropout: 0.1
+  dropout_a: 0.3
+  mlp_ratio: 4
+  use_mixed_proj: true
+
+propagation:
+  mode: chebyshev
+
+temporal:
+  mode: tcn
+  num_layers: 3
+  kernel_size: 3
+  dilation_base: 2
+  dropout: 0.1
+
+graph:
+  mode: learned
+  lambda_hybrid: 0.5
+  sparsity_k: null
+
+training:
+  epochs: 20
+  batch_size: 200
+  learning_rate: 0.001
+  weight_decay: 0.0003
+  early_stop: 5
+  clip_grad: 0.0
+  milestones: [10, 15]
+  lr_decay_rate: 0.1
+  seed: 42
+
+output:
+  hf_repo_prefix: STGFORMER_CHEB_TCN_DOW
+
+wandb:
+  entity: cs224w-traffic-forecasting
+  enabled: true

@@ -1,0 +1,71 @@
+# STGFormer with MLP Temporal Mode
+# Uses simple MLP instead of Transformer for temporal processing
+#
+# MLP temporal processing provides:
+# - 3-5x faster than Transformer (no attention, no reshape operations)
+# - Minimal parameters
+# - No explicit temporal modeling (tests if spatial attention is sufficient)
+# - Fastest possible temporal processing option
+#
+# This is a useful ablation baseline to test whether complex temporal modeling
+# (Transformer/Mamba/TCN) is actually necessary for T=12, or if the spatial
+# attention branch captures most of the important patterns.
+#
+# Usage:
+#   invoke train-experiment --name mlp
+#   invoke train-experiment --name mlp --dataset METR-LA
+
+# Experiment description (logged to W&B)
+description: "STGFormer with MLP temporal processing (ablation: is temporal attention necessary?)"
+
+# Datasets to train on
+# PEMS-BAY first (larger, needs more memory - fail early if OOM)
+datasets:
+  - PEMS-BAY
+  - METR-LA
+
+# Model architecture (same as baseline)
+model:
+  num_layers: 3
+  num_heads: 4
+  input_embedding_dim: 24
+  tod_embedding_dim: 24
+  adaptive_embedding_dim: 80
+  dropout: 0.1
+  dropout_a: 0.3
+  mlp_ratio: 4
+  use_mixed_proj: true
+
+# Temporal processing (ONLY DIFFERENCE: simple MLP instead of transformer)
+temporal:
+  mode: mlp  # transformer | mamba | tcn | depthwise | mlp
+  # MLP-specific parameters
+  hidden_dim: null  # null = use model_dim (96), could set to 2*model_dim for more capacity
+
+# Graph structure (same as baseline)
+graph:
+  mode: learned  # learned | geographic | hybrid
+  lambda_hybrid: 0.5
+  sparsity_k: null
+
+# Training (quick 20 epoch run for ablation)
+training:
+  epochs: 20
+  batch_size: 200  # MLP is most memory-efficient, can use largest batch
+  learning_rate: 0.001
+  weight_decay: 0.0003
+  early_stop: 5
+  clip_grad: 0.0
+  milestones: [10, 15]
+  lr_decay_rate: 0.1
+  seed: 42  # Random seed for reproducibility
+
+# Output
+output:
+  # HF repo: {username}/{hf_repo_prefix}_{dataset} (if username is not specified it gets pulled in from .env_public, dataset always gets appended automatically)
+  hf_repo_prefix: STGFORMER_MLP
+
+# Weights & Biases logging
+wandb:
+  enabled: true
+  # project: traffic-forecasting  # Default

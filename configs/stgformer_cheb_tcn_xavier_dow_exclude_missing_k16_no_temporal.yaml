@@ -1,0 +1,61 @@
+# Ablation Study: Remove Temporal Processing (TemporalMode.NONE)
+# Based on final model but WITHOUT temporal processing
+# All other components remain: Cheb + Graph + Xavier + DOW + ExcludeMissing
+# Temporal mode set to NONE - skips all attention/temporal layers
+#
+# Usage:
+#   python scripts/train_stgformer.py --config configs/stgformer_cheb_tcn_xavier_dow_exclude_missing_k16_no_temporal.yaml
+#
+
+description: "Ablation: Full model WITHOUT temporal processing (Cheb+Graph+Xavier+DOW+ExcludeMissing, TemporalMode=NONE)"
+
+datasets:
+  - PEMS-BAY
+  - METR-LA
+
+model:
+  num_layers: 3
+  num_heads: 4
+  input_embedding_dim: 24
+  tod_embedding_dim: 24
+  dow_embedding_dim: 24
+  adaptive_embedding_dim: 80
+  dropout: 0.1
+  dropout_a: 0.3
+  mlp_ratio: 4
+  use_mixed_proj: true
+
+propagation:
+  mode: chebyshev
+
+temporal:
+  mode: none  # Disable temporal processing - graph propagation only
+
+graph:
+  mode: learned
+  lambda_hybrid: 0.5
+  sparsity_k: 16
+
+training:
+  epochs: 20
+  batch_size: 200
+  learning_rate: 0.001
+  weight_decay: 0.0003
+  early_stop: 5
+  clip_grad: 0.0
+  milestones: [10, 15]
+  lr_decay_rate: 0.1
+  seed: 42
+
+initialization:
+  use_zero_init: false
+
+output:
+  hf_repo_prefix: ABL_NO_TEMPORAL
+
+wandb:
+  entity: cs224w-traffic-forecasting
+  enabled: true
+  tags: ["ablation", "no_temporal"]
+
+exclude_missing_from_norm: true

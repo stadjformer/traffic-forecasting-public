@@ -1,0 +1,61 @@
+# STGFormer with Chebyshev Propagation + TCN Temporal Mode
+# Combines spectral filtering (Chebyshev polynomials) with causal dilated TCN temporal backbone
+#
+# Usage:
+#   python scripts/train_stgformer.py --config configs/stgformer_cheb_tcn.yaml
+#   invoke train-experiment --name cheb_tcn
+
+description: "STGFormer with Chebyshev graph filtering + TCN temporal processing"
+
+# Train on both datasets (PEMS-BAY first for OOM safety)
+datasets:
+  - PEMS-BAY
+  - METR-LA
+
+model:
+  num_layers: 3
+  num_heads: 4
+  input_embedding_dim: 24
+  tod_embedding_dim: 24
+  dow_embedding_dim: 0
+  adaptive_embedding_dim: 80
+  dropout: 0.1
+  dropout_a: 0.3
+  mlp_ratio: 4
+  use_mixed_proj: true
+
+# Use Chebyshev polynomials for spectral propagation
+propagation:
+  mode: chebyshev
+
+# Temporal processing via dilated causal convolutions
+temporal:
+  mode: tcn
+  num_layers: 3
+  kernel_size: 3
+  dilation_base: 2
+  dropout: 0.1
+
+# Graph mode matches baseline (trainable adjacency)
+graph:
+  mode: learned
+  lambda_hybrid: 0.5
+  sparsity_k: null
+
+training:
+  epochs: 20
+  batch_size: 200
+  learning_rate: 0.001
+  weight_decay: 0.0003
+  early_stop: 5
+  clip_grad: 0.0
+  milestones: [10, 15]
+  lr_decay_rate: 0.1
+  seed: 42
+
+output:
+  hf_repo_prefix: STGFORMER_CHEB_TCN
+
+wandb:
+  entity: cs224w-traffic-forecasting
+  enabled: true

@@ -1,0 +1,78 @@
+# STGFormer End-to-End Test Configuration
+#
+# Fast throwaway test that verifies the full pipeline:
+# 1. Pretrain (stage 1 + stage 2) with minimal epochs
+# 2. Save pretrained model
+# 3. Load pretrained model
+# 4. Impute training data
+# 5. Train forecasting model
+#
+# Usage:
+#   python scripts/train_stgformer.py --config configs/stgformer_test_e2e.yaml
+
+description: "STGFormer E2E test: pretrain->save->load->impute->train"
+
+datasets:
+  - METR-LA  # Single dataset for speed (smaller than PEMS-BAY)
+
+# Model architecture (same as baseline)
+model:
+  num_layers: 3
+  num_heads: 4
+  input_embedding_dim: 24
+  tod_embedding_dim: 24
+  adaptive_embedding_dim: 80
+  dropout: 0.1
+  dropout_a: 0.3
+  mlp_ratio: 4
+  use_mixed_proj: true
+
+# Graph structure
+graph:
+  mode: learned
+  lambda_hybrid: 0.5
+  sparsity_k: null
+
+# Pretraining configuration - minimal epochs for fast test
+pretraining:
+  # Stage 1: Just 1 epoch for testing
+  stage1_epochs: 1
+  stage1_mask_ratio: 0.15
+
+  # Stage 2: Just 1 epoch for testing
+  stage2_epochs: 1
+  stage2_mask_ratio: 0.10
+
+  learning_rate: 0.001
+  pretrain_batch_size: 100
+  imputation_iterations: 3
+
+  # Save pretrained model to test save/load
+  save_to: "STGFORMER_TEST_E2E"
+
+  # After first run, uncomment this to test loading:
+  # load_from: "STGFORMER_TEST_E2E"
+
+# Enable imputation to test imputation pipeline
+use_imputation: true
+
+# Training (forecasting) - minimal epochs for fast test
+training:
+  epochs: 2  # Just 2 epochs to verify training works
+  batch_size: 200
+  learning_rate: 0.001
+  weight_decay: 0.0003
+  early_stop: 10  # High value so it doesn't stop early
+  clip_grad: 0.0
+  milestones: [10, 15]
+  lr_decay_rate: 0.1
+  seed: 42
+
+# Output
+output:
+  hf_repo_prefix: STGFORMER_TEST_E2E
+
+# Weights & Biases logging
+wandb:
+  entity: cs224w-traffic-forecasting
+  enabled: true

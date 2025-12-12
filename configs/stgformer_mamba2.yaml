@@ -1,0 +1,70 @@
+# STGFormer with Mamba2 Temporal Mode
+# Same as stgformer_baseline_bs200_short but with Mamba2 SSM for temporal processing
+#
+# NOTE: Requires CUDA-enabled GPU (mamba-ssm is CUDA-only)
+# Requires: uv sync --extra cuda
+#
+# Mamba2 vs Mamba differences:
+# - d_state: 64 (vs 16 in Mamba) - higher capacity state space
+# - More efficient implementation with SSD (Structured State Space Duality)
+#
+# Usage:
+#   python scripts/train_stgformer.py --config configs/stgformer_mamba2.yaml
+#   python scripts/train_stgformer.py --config configs/stgformer_mamba2.yaml --dataset METR-LA
+
+# Experiment description (logged to W&B)
+description: "STGFormer with Mamba2 SSM temporal processing (higher capacity vs Mamba)"
+
+# Datasets to train on (can be overridden with --dataset CLI arg)
+# PEMS-BAY first (larger, needs more memory - fail early if OOM)
+datasets:
+  - PEMS-BAY
+  - METR-LA
+
+# Model architecture (same as baseline)
+model:
+  num_layers: 3
+  num_heads: 4
+  input_embedding_dim: 24
+  tod_embedding_dim: 24
+  adaptive_embedding_dim: 80
+  dropout: 0.1
+  dropout_a: 0.3
+  mlp_ratio: 4
+  use_mixed_proj: true
+
+# Temporal processing (ONLY DIFFERENCE: Mamba2 instead of transformer)
+temporal:
+  mode: mamba  # transformer | mamba
+  # Mamba2-specific parameters (higher capacity than Mamba)
+  d_state: 64   # SSM state dimension (64 or 128 for Mamba2, vs 16 for Mamba)
+  d_conv: 4     # Convolution kernel size (local context window)
+  expand: 2     # Expansion factor for inner dimension
+
+# Graph structure (same as baseline)
+graph:
+  mode: learned  # learned | geographic | hybrid
+  lambda_hybrid: 0.5
+  sparsity_k: null
+
+# Training (same as baseline bs200_short)
+training:
+  epochs: 20
+  batch_size: 100
+  learning_rate: 0.001
+  weight_decay: 0.0003
+  early_stop: 5
+  clip_grad: 0.0
+  milestones: [10, 15]
+  lr_decay_rate: 0.1
+  seed: 42  # Random seed for reproducibility
+
+# Output
+output:
+  # HF repo: {username}/{hf_repo_prefix}_{dataset} (if username is not specified it gets pulled in from .env_public, dataset always gets appended automatically)
+  hf_repo_prefix: STGFORMER_MAMBA2
+
+# Weights & Biases logging
+wandb:
+  enabled: true
+  # project: traffic-forecasting  # Default

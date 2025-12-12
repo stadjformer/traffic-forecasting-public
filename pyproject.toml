@@ -1,0 +1,63 @@
+[project]
+name = "traffic-forecasting"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "contextily>=1.6.2",
+    "darts>=0.38.0",
+    "datasets>=4.3.0",
+    "dcrnn-pytorch",
+    "geopandas>=1.1.1",
+    "graph-wavenet-wavebound",
+    "hf-transfer>=0.1.9",
+    "huggingface-hub>=0.36.0",
+    "imageio>=2.37.2",
+    "ipykernel>=7.0.1",
+    "ipywidgets>=8.1.7",
+    "jupyterlab>=4.4.10",
+    "matplotlib>=3.8.0",
+    "mtgnn",
+    "numpy>=2.3.4",
+    "pandas==2.2.2",
+    "python-dotenv>=1.2.1",
+    "pyyaml>=6.0",
+    "safetensors>=0.4.0",
+    "scikit-learn>=1.5.0",
+    "stgformer",
+    "tabulate>=0.9.0",
+    "torch>=2.0.0",
+    "tqdm>=4.67.1",
+    "wandb>=0.18.0",
+]
+
+[project.optional-dependencies]
+# CUDA-only dependencies for Mamba temporal mode
+# Requires: Linux + NVIDIA GPU + CUDA toolkit with nvcc compiler
+# These packages will NOT install on macOS or CPU-only systems
+cuda = [
+    "mamba-ssm>=2.0.0",
+    "causal-conv1d>=1.2.0",
+]
+
+[dependency-groups]
+dev = [
+    "invoke>=2.2.0",
+    "nbdime>=4.0.2",
+    "nbstripout>=0.8.1",
+    "pytest>=8.0.0",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+exclude = ["data*", "notebooks*", "tests*"]
+
+[tool.uv.sources]
+dcrnn-pytorch = { git = "https://github.com/witgaw/DCRNN_PyTorch.git", rev = "4aa3e31" }
+mtgnn = {  git = "https://github.com/witgaw/MTGNN", rev = "fede5fa" }
+graph-wavenet-wavebound = {  git = "https://github.com/witgaw/Graph-WaveNet-WaveBound", rev = "4c8b680" }
+stgformer = {  git = "https://github.com/witgaw/STGformer", rev = "84b0208" }

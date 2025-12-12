@@ -1,0 +1,55 @@
+# STGFormer Baseline with Batch Size 200
+# Same as baseline but with larger batch for faster training on high-VRAM GPUs.
+#
+# Usage:
+#   python scripts/train_stgformer.py --config configs/stgformer_baseline_bs200.yaml
+#   python scripts/train_stgformer.py --config configs/stgformer_baseline_bs200.yaml --dataset METR-LA
+
+description: "Baseline STGFormer with batch_size=200 for faster training"
+
+# Datasets to train on (can be overridden with --dataset CLI arg)
+# PEMS-BAY first (larger, needs more memory - fail early if OOM)
+datasets:
+  - PEMS-BAY
+  - METR-LA
+
+# Model architecture
+model:
+  num_layers: 3
+  num_heads: 4
+  input_embedding_dim: 24
+  tod_embedding_dim: 24
+  adaptive_embedding_dim: 80
+  dropout: 0.1
+  dropout_a: 0.3
+  mlp_ratio: 4
+  use_mixed_proj: true
+
+# Graph structure
+graph:
+  mode: learned  # learned | geographic | hybrid
+  lambda_hybrid: 0.5
+  sparsity_k: null
+
+# Training
+training:
+  epochs: 20
+  batch_size: 200
+  learning_rate: 0.001
+  weight_decay: 0.0003
+  early_stop: 5
+  clip_grad: 0.0
+  milestones: [10, 15]
+  lr_decay_rate: 0.1
+  seed: 42
+
+# Output
+output:
+  # HF repo: {username}/{hf_repo_prefix}_{dataset} (if username is not specified it gets pulled in from .env_public, dataset always gets appended automatically)
+  hf_repo_prefix: STGFORMER_BS200_SHORT
+
+# Weights & Biases logging (optional)
+wandb:
+  entity: cs224w-traffic-forecasting
+  enabled: true
+  # project: traffic-forecasting  # Default

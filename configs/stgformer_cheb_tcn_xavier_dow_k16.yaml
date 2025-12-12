@@ -1,0 +1,62 @@
+# Ablation Study: Remove ExcludeMissing Normalization
+# Based on final model but WITHOUT exclude_missing_from_norm
+# All other components remain: Cheb + TCN + Xavier + DOW + K16
+#
+# Usage:
+#   python scripts/train_stgformer.py --config configs/stgformer_cheb_tcn_xavier_dow_k16.yaml
+#
+
+description: "Ablation: Full model WITHOUT ExcludeMissing normalization (Cheb+TCN+Xavier+DOW+K16)"
+
+datasets:
+  - PEMS-BAY
+  - METR-LA
+
+model:
+  num_layers: 3
+  num_heads: 4
+  input_embedding_dim: 24
+  tod_embedding_dim: 24
+  dow_embedding_dim: 24
+  adaptive_embedding_dim: 80
+  dropout: 0.1
+  dropout_a: 0.3
+  mlp_ratio: 4
+  use_mixed_proj: true
+
+propagation:
+  mode: chebyshev
+
+temporal:
+  mode: tcn
+  num_layers: 3
+  kernel_size: 3
+  dilation_base: 2
+  dropout: 0.1
+
+graph:
+  mode: learned
+  lambda_hybrid: 0.5
+  sparsity_k: 16
+
+training:
+  epochs: 20
+  batch_size: 200
+  learning_rate: 0.001
+  weight_decay: 0.0003
+  early_stop: 5
+  clip_grad: 0.0
+  milestones: [10, 15]
+  lr_decay_rate: 0.1
+  seed: 42
+
+initialization:
+  use_zero_init: false  # Xavier initialization
+
+output:
+  hf_repo_prefix: ABL_NO_EXCLUDE_MISSING
+
+wandb:
+  entity: cs224w-traffic-forecasting
+  enabled: true
+  tags: ["ablation", "no_exclude_missing"]

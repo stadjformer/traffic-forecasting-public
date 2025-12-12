@@ -1,0 +1,69 @@
+# STGFormer with Depthwise Separable Convolution Temporal Mode
+# Uses depthwise separable convolution instead of Transformer for temporal processing
+#
+# Depthwise separable convolution provides:
+# - 2-3x faster than Transformer (fewer parameters, efficient computation)
+# - O(T) complexity with parallel execution
+# - Excellent for short sequences with local temporal patterns
+# - ~10x fewer parameters than standard convolution
+#
+# This is the recommended fast alternative to Transformer for T=12.
+#
+# Usage:
+#   invoke train-experiment --name depthwise
+#   invoke train-experiment --name depthwise --dataset METR-LA
+
+# Experiment description (logged to W&B)
+description: "STGFormer with Depthwise Separable Conv temporal processing (fast alternative to Transformer)"
+
+# Datasets to train on
+# PEMS-BAY first (larger, needs more memory - fail early if OOM)
+datasets:
+  - PEMS-BAY
+  - METR-LA
+
+# Model architecture (same as baseline)
+model:
+  num_layers: 3
+  num_heads: 4
+  input_embedding_dim: 24
+  tod_embedding_dim: 24
+  adaptive_embedding_dim: 80
+  dropout: 0.1
+  dropout_a: 0.3
+  mlp_ratio: 4
+  use_mixed_proj: true
+
+# Temporal processing (ONLY DIFFERENCE: depthwise conv instead of transformer)
+temporal:
+  mode: depthwise  # transformer | mamba | tcn | depthwise | mlp
+  # Depthwise-specific parameters
+  kernel_size: 3     # Convolution kernel size (local temporal window)
+
+# Graph structure (same as baseline)
+graph:
+  mode: learned  # learned | geographic | hybrid
+  lambda_hybrid: 0.5
+  sparsity_k: null
+
+# Training (quick 20 epoch run for ablation)
+training:
+  epochs: 20
+  batch_size: 200  # Depthwise is memory-efficient, can use larger batch
+  learning_rate: 0.001
+  weight_decay: 0.0003
+  early_stop: 5
+  clip_grad: 0.0
+  milestones: [10, 15]
+  lr_decay_rate: 0.1
+  seed: 42  # Random seed for reproducibility
+
+# Output
+output:
+  # HF repo: {username}/{hf_repo_prefix}_{dataset} (if username is not specified it gets pulled in from .env_public, dataset always gets appended automatically)
+  hf_repo_prefix: STGFORMER_DEPTHWISE
+
+# Weights & Biases logging
+wandb:
+  enabled: true
+  # project: traffic-forecasting  # Default

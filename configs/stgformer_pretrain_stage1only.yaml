@@ -1,0 +1,72 @@
+# STGFormer with Stage 1 Only Pretraining (Per-timestep Masking)
+#
+# Tests per-timestep masking only (easier task, uses temporal + spatial context).
+# 10 epochs of stage1, no stage2.
+#
+# Usage:
+#   python scripts/train_stgformer.py --config configs/stgformer_pretrain_stage1only.yaml
+
+description: "STGFormer with stage1-only pretraining (per-timestep masking, 10 epochs)"
+
+datasets:
+  - PEMS-BAY
+  - METR-LA
+
+# Model architecture (same as baseline)
+model:
+  num_layers: 3
+  num_heads: 4
+  input_embedding_dim: 24
+  tod_embedding_dim: 24
+  adaptive_embedding_dim: 80
+  dropout: 0.1
+  dropout_a: 0.3
+  mlp_ratio: 4
+  use_mixed_proj: true
+
+# Graph structure
+graph:
+  mode: learned
+  lambda_hybrid: 0.5
+  sparsity_k: null
+
+# Pretraining configuration
+pretraining:
+  # Stage 1: Per-timestep masking only
+  stage1_epochs: 10
+  stage1_mask_ratio: 0.15
+
+  # Stage 2: Disabled
+  stage2_epochs: 0
+  stage2_mask_ratio: 0.10
+
+  learning_rate: 0.001
+  pretrain_batch_size: 100
+  imputation_iterations: 3
+
+  # Save pretrained model
+  save_to: "STGFORMER_PRETRAINED_STAGE1ONLY"
+
+# No imputation (load-only config will handle that)
+# use_imputation: false
+
+# Training (forecasting, after pretraining)
+training:
+  epochs: 20
+  batch_size: 200
+  learning_rate: 0.001
+  weight_decay: 0.0003
+  early_stop: 5
+  clip_grad: 0.0
+  milestones: [10, 15]
+  lr_decay_rate: 0.1
+  seed: 42
+
+# Output
+output:
+  hf_repo_prefix: STGFORMER_PRETRAIN_STAGE1ONLY
+
+# Weights & Biases logging
+wandb:
+  entity: cs224w-traffic-forecasting
+  enabled: true

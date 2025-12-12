@@ -1,0 +1,76 @@
+# STGFormer with Masked Node Pretraining + Imputation
+#
+# Identical to stgformer_pretrain.yaml but enables data imputation after
+# pretraining. Missing values in the training split (and inference inputs) are
+# filled using the pretrained imputation head before fine-tuning.
+#
+# Usage:
+#   python scripts/train_stgformer.py --config configs/stgformer_pretrain_impute.yaml
+#   python scripts/train_stgformer.py --config configs/stgformer_pretrain_impute.yaml --dataset METR-LA
+
+description: "STGFormer with masked node pretraining + imputation (per-timestep -> per-node curriculum)"
+
+datasets:
+  - PEMS-BAY
+  - METR-LA
+
+# Model architecture (same as baseline)
+model:
+  num_layers: 3
+  num_heads: 4
+  input_embedding_dim: 24
+  tod_embedding_dim: 24
+  adaptive_embedding_dim: 80
+  dropout: 0.1
+  dropout_a: 0.3
+  mlp_ratio: 4
+  use_mixed_proj: true
+
+# Graph structure
+graph:
+  mode: learned
+  lambda_hybrid: 0.5
+  sparsity_k: null
+
+# Pretraining configuration (identical to stgformer_pretrain.yaml)
+pretraining:
+  stage1_epochs: 5
+  stage1_mask_ratio: 0.15
+  stage2_epochs: 5
+  stage2_mask_ratio: 0.10
+  learning_rate: 0.001
+  pretrain_batch_size: 100
+  imputation_iterations: 3
+
+  # Optional: Save pretrained model to HF Hub
+  # Two formats supported:
+  #   - Full repo ID: "username/stgformer-pretrained" (if contains "/")
+  #   - Model prefix: "STGFORMER_PRETRAINED" (uses HF_USERNAME from .env)
+  # save_to: "STGFORMER_PRETRAINED"
+
+  # Optional: Load existing pretrained model (skips pretraining)
+  load_from: "STGFORMER_PRETRAINED"
+
+# Enable imputation after pretraining
+use_imputation: true
+
+# Training (forecasting, after pretraining + imputation)
+training:
+  epochs: 20
+  batch_size: 200
+  learning_rate: 0.001
+  weight_decay: 0.0003
+  early_stop: 5
+  clip_grad: 0.0
+  milestones: [10, 15]
+  lr_decay_rate: 0.1
+  seed: 42  # Random seed for reproducibility
+
+# Output
+output:
+  hf_repo_prefix: STGFORMER_PRETRAIN_IMPUTE
+
+# Weights & Biases logging
+wandb:
+  entity: cs224w-traffic-forecasting
+  enabled: true
